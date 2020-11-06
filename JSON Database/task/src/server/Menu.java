@@ -1,73 +1,94 @@
 package server;
 
+import com.google.gson.Gson;
+
 import java.util.InputMismatchException;
-import java.util.Scanner;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Menu {
 
-    public String startMenu(Scanner scanner, String[] list) {
-        String command = scanner.next();
-        int index = scanner.nextInt() - 1;
-        String input = scanner.nextLine();
+    Map<String, String> responseMap;
+    Map<String, String> requestMap;
+    Gson gson = new Gson();
+    String type;
+    String key;
+    String value;
+    String responseJson;
+
+    String OK = "OK";
+    String ERROR = "ERROR";
+
+    String VALUE = "value";
+    String RESPONSE = "response";
+    String REASON = "reason";
+    String NO_SUCH_KEY = "No such key";
+
+
+    public String startMenu(String received, Map<String, String> database) {
+        responseMap = new LinkedHashMap<>();
+        requestMap = gson.fromJson(received, Map.class);
+
+        type = requestMap.get("type");
+        key = requestMap.get("key");
 
         try {
-            if (command.equalsIgnoreCase("exit")) {
+            if (type.equalsIgnoreCase("exit")) {
                 return "exit";
             } else {
-                if (index > 100 || index < 0) {
-                    errorMessage();
-                } else {
-                    switch (command) {
-                        case "set":
-                            return setCell(list, index, input);
-                        case "get":
-                            return getCell(list, index);
-                        case "delete":
-                            return delete(list, index);
-                        case "exit":
-                            return "exit";
-                        default:
-                            return errorMessage();
-                    }
+                switch (type) {
+                    case "set":
+                        value = requestMap.get("value");
+                        setCell(database);
+                        break;
+                    case "get":
+                        getCell(database);
+                        break;
+                    case "delete":
+                        deleteCell(database);
+                        break;
+                    case "exit":
+                        return "exit";
+                    default:
+                        return ERROR;
                 }
             }
+            responseJson = gson.toJson(responseMap);
+            return responseJson;
         } catch (InputMismatchException | IndexOutOfBoundsException e) {
-            return errorMessage();
+            return ERROR;
         }
-        return errorMessage();
     }
 
 
-    public static String setCell(String[] list, int index, String input) {
-        list[index] = input;
-        return okMessage();
-    }
-
-    private static String getCell(String[] list, int index) {
-        String cell = list[index];
-        if (cell == null || cell.equals("")) {
-            return errorMessage();
+    public void setCell(Map<String, String> database) {
+        if (requestMap.containsKey("key") && requestMap.containsKey("value")) {
+            database.put(key, value);
+            responseMap.put(RESPONSE, OK);
         } else {
-            System.out.println(cell);
-            return cell;
+            responseMap.put(RESPONSE, ERROR);
         }
     }
 
-    private static String delete(String[] list, int index) {
-        list[index] = "";
-        return okMessage();
+    private void getCell(Map<String, String> database) {
+        if (database.containsKey(key)) {
+            responseMap.put(RESPONSE, OK);
+            responseMap.put(VALUE, value);
+        } else {
+            responseMap.put(RESPONSE, ERROR);
+            responseMap.put(REASON, NO_SUCH_KEY);
+        }
     }
 
-    private static String errorMessage() {
-        String error = "ERROR";
-        System.out.println(error);
-        return error;
+    private void deleteCell(Map<String, String> database) {
+        if (database.containsKey(key)) {
+            database.remove(key);
+            responseMap.put(RESPONSE, OK);
+        } else {
+            responseMap.put(RESPONSE, ERROR);
+            responseMap.put(REASON, NO_SUCH_KEY);
+        }
     }
 
-    private static String okMessage() {
-        String ok = "OK";
-        System.out.println(ok);
-        return ok;
-    }
 
 }

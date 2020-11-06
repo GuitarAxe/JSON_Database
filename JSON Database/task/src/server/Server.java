@@ -5,18 +5,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Server {
 
+    Map<String, String> database = new HashMap<>();
     Menu menu = new Menu();
-    String[] list = new String[1000];
 
     public Server() {
         System.out.println("Server started!");
     }
 
-    public void run(int PORT, String request) {
+    public void run(int PORT) {
         try (ServerSocket server = new ServerSocket(PORT)) {
             String response = "";
             while (!response.equalsIgnoreCase("exit")) {
@@ -26,9 +27,8 @@ public class Server {
                         DataOutputStream output = new DataOutputStream(socket.getOutputStream())
                 ) {
                     String received = input.readUTF();
-                    Scanner scanner = new Scanner(received);
 
-                    response = menu.startMenu(scanner, list);
+                    response = menu.startMenu(received, database);
                     output.writeUTF(response);
                 }
             }
